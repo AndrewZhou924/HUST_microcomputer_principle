@@ -3,8 +3,7 @@
  __CONFIG _CONFIG2, _WRT_OFF & _VCAPEN_OFF & _PLLEN_ON & _STVREN_ON & _BORV_LO & _LPBOR_OFF & _LVP_ON
 CONTEXT_SAVING UDATA_SHR
 
-W_TMP RES 1
-S_TMP RES 1
+
  
 RES_VECT  CODE    0x0000            ; processor reset vector
 GOTO    START                   ; go to beginning of program
