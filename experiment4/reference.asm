@@ -148,7 +148,7 @@ CALL TABLE;
 MOVWF PORTA
 RETURN
 
-TABLE:
+TABLE: ;列表
 MOVWF PCL;转到偏移的地址
 RETLW B'01101111';9
 RETLW B'01111111';8
@@ -234,14 +234,12 @@ RETURN
 ;;;;;;;;;;函数区到此为止;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-
 MAIN
 LOOP
 MOVF CNUM,W
-MOVWF NUM;数码管
+MOVWF NUM;数码管 CNUM => NUM
 MOVF PA,W
-MOVWF OFFSET;图案
+MOVWF OFFSET;图案 PA => OFFSET
 
 CALL SELECT;;;;;;;;;;;;;;;;;;;;;;;;;数码管
 CALL WRITE;;;;;;;;;;;;;;;;;;;;;;;;;;图案
