@@ -100,7 +100,7 @@ int main() {
         ISPRESS_LAST   = ISPRESS;
 
         KEYSCAN();
-
+      
         if (KEY_VALUE != KEY_VALUE_LAST) 
             REFRESH_SHOW();
 
@@ -223,28 +223,35 @@ void KEYSCAN(void) {
     KEY_3();
     KEY_4();
 
-    // ?
-    ISPRESS = 0;
 }
 
 void KEY_1(void) {
     TRISB = 0b11111111;
     WPUB  = 0b11111111;
+    if (ISPRESS==1){
+        return;
+    }
     if (PORTBbits.RB0 == 0)
         DELAY();  
     if (PORTBbits.RB0 == 0)
         KEY7();    
-
+    if (ISPRESS==1){
+        return;
+    }
     if (PORTBbits.RB1 == 0)
         DELAY();  
     if (PORTBbits.RB1 == 0)
         KEY8();   
-
+    if (ISPRESS==1){
+        return;
+    }
     if (PORTBbits.RB2 == 0)
         DELAY();  
     if (PORTBbits.RB2 == 0)
         KEY9(); 
-
+    if (ISPRESS==1){
+        return;
+    }
     if (PORTBbits.RB3 == 0)
         DELAY();  
     if (PORTBbits.RB3 == 0)
@@ -254,17 +261,23 @@ void KEY_1(void) {
 void KEY_2(void) {
     TRISB = 0b11111110;
     WPUB  = 0b11111110;  
-
+    if (ISPRESS==1){
+        return;
+    }
     if (PORTBbits.RB1 == 0)
         DELAY();  
     if (PORTBbits.RB1 == 0)
         KEY5();   
-
+    if (ISPRESS==1){
+        return;
+    }
     if (PORTBbits.RB2 == 0)
         DELAY();  
     if (PORTBbits.RB2 == 0)
         KEY1(); 
-
+    if (ISPRESS==1){
+        return;
+    }
     if (PORTBbits.RB3 == 0)
         DELAY();  
     if (PORTBbits.RB3 == 0)
@@ -274,12 +287,16 @@ void KEY_2(void) {
 void KEY_3(void) {
     TRISB = 0b11111101;
     WPUB  = 0b11111101; 
-
+    if (ISPRESS==1){
+        return;
+    }
     if (PORTBbits.RB2 == 0)
         DELAY();  
     if (PORTBbits.RB2 == 0)
         KEY3(); 
-
+    if (ISPRESS==1){
+        return;
+    }
     if (PORTBbits.RB3 == 0)
         DELAY();  
     if (PORTBbits.RB3 == 0)
@@ -289,7 +306,9 @@ void KEY_3(void) {
 void KEY_4(void) {
     TRISB = 0b11111011;
     WPUB  = 0b11111011;
-
+    if (ISPRESS==1){
+        return;
+    }
     if (PORTBbits.RB3 == 0)
         DELAY();  
     if (PORTBbits.RB3 == 0)
@@ -305,46 +324,55 @@ void KEY1(void) {
 void KEY2(void) {
     KEY_VALUE = 2;
     ISPRESS   = 1;
+    
 }
 
 void KEY3(void) {
     KEY_VALUE = 3;
     ISPRESS   = 1;
+    
 }
 
 void KEY4(void) {
     KEY_VALUE = 4;
     ISPRESS   = 1;
+    
 }
 
 void KEY5(void) {
     KEY_VALUE = 5;
     ISPRESS   = 1;
+    
 }
 
 void KEY6(void) {
     KEY_VALUE = 6;
     ISPRESS   = 1;
+    
 }
 
 void KEY7(void) {
     KEY_VALUE = 7;
     ISPRESS   = 1;
+    
 }
 
 void KEY8(void) {
     KEY_VALUE = 8;
     ISPRESS   = 1;
+    
 }
 
 void KEY9(void) {
     KEY_VALUE = 9;
     ISPRESS   = 1;
+    
 }
 
 void KEY10(void) {
     KEY_VALUE = 10;
     ISPRESS   = 1;
+    
 }
 
 void DELAY(void) {
