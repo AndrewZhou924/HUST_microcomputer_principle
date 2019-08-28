@@ -92,6 +92,41 @@ void CASE2(void);
 void CASE3(void);
 void CASE4(void);
 
+int ReadEE(char addr);
+void WriteEE(char addr,int data);
+int EEPROM_buf; //读写数据的储存空间
+int EEPROM_ADDR = EEPROM_ADDR;
+
+//EEPROM读数据函数
+int ReadEE(char addr) {
+    int num;
+    do{}
+    while(RD == 1); //等待读完成
+    EEADR = addr; //写入要读的址址
+    EEPGD = 0;    //操作EEPROM
+    RD = 1;       //执行读操作
+    do{}
+    while(RD == 1); //等待读完成
+    num = EEDATA;
+    return num;//返回读取的数据
+}
+
+//EEPROM写数据函数
+void WriteEE(char addr,int data) {
+    do{}
+    while(WR == 1);//等待写完成
+    EEADR = addr;//写入地址信息
+    EEDATA = data;//写入数据信息
+    EEPGD = 0;//操作EEPROM
+    WREN = 1; //写EEPROM允许
+    EECON2 = 0x55;//写入特定时序
+    EECON2 = 0xaa;
+    WR = 1; //执行写操作
+    do{}
+    while(WR == 1);//等待写完成
+    WREN = 0;//禁止写入EEPROM
+}
+
 int main() {
     INICIALISE();
     INTCONbits.GIE=1; 
@@ -103,7 +138,13 @@ int main() {
     T1CONbits.TMR1ON=1;
     PIR1bits.TMR1IF=0;
     PIE1bits.TMR1IE=1;
-//    PIE1bits.TMR1GIE = 1;
+
+    // test EEPROM
+    char temp_char = 'k';
+    char temp_int = 9;
+    
+    // WriteEE(EEPROM_ADDR,temp_int); //将0x66写入EEPROM_ADDR地址的EEROM中
+    EEPROM_buf = ReadEE(EEPROM_ADDR); //将EEPROM_ADDR地址中的数据读出，并将他放到BUF中
 
     
     while(1) {
@@ -328,61 +369,63 @@ void KEY_4(void) {
 void KEY1(void) {
     KEY_VALUE = 1;
     ISPRESS   = 1;
-    
+    WriteEE(EEPROM_ADDR,1);
 }
 
 void KEY2(void) {
     KEY_VALUE = 2;
     ISPRESS   = 1;
+    WriteEE(EEPROM_ADDR,2);
     
 }
 
 void KEY3(void) {
     KEY_VALUE = 3;
     ISPRESS   = 1;
+    WriteEE(EEPROM_ADDR,3);
     
 }
 
 void KEY4(void) {
     KEY_VALUE = 4;
     ISPRESS   = 1;
-    
+    WriteEE(EEPROM_ADDR,4);
 }
 
 void KEY5(void) {
     KEY_VALUE = 5;
     ISPRESS   = 1;
-    
+    WriteEE(EEPROM_ADDR,5);
 }
 
 void KEY6(void) {
     KEY_VALUE = 6;
     ISPRESS   = 1;
-    
+    WriteEE(EEPROM_ADDR,6);
 }
 
 void KEY7(void) {
     KEY_VALUE = 7;
     ISPRESS   = 1;
-    
+    WriteEE(EEPROM_ADDR,7);
 }
 
 void KEY8(void) {
     KEY_VALUE = 8;
     ISPRESS   = 1;
-    
+    WriteEE(EEPROM_ADDR,8);
 }
 
 void KEY9(void) {
     KEY_VALUE = 9;
     ISPRESS   = 1;
-    
+    WriteEE(EEPROM_ADDR,9);
 }
 
 void KEY10(void) {
     KEY_VALUE = 10;
     ISPRESS   = 1;
-    
+    WriteEE(EEPROM_ADDR,10);
 }
 
 void DELAY(void) {
