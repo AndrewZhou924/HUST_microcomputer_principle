@@ -1,9 +1,3 @@
-/*
- * File:   int.c
- * Author: sunhaohai
- *
- * Created on 2018?8?26?, ??11:52
- */
 
 #include "int.h"
 #include <pic.h>
