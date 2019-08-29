@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "ADC_1.0.C": "cpp"
+        "ADC_1.0.C": "cpp",
+        "ADC-touch_1.0.C": "cpp"
     }
 }
