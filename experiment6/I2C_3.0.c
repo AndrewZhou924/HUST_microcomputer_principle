@@ -45,7 +45,7 @@ int KEY_FLAG = 0x00;
 int KEY_STATE = 0x00;
 int STOP_WATCH = 0x00;
 int NUMBER_SHOW = 9876;
-int STABLE[] = {0b00000001,0b00000010,0b00000100,0b00001000}; 
+int STABLE[] = {0b00000001,0b00000010,0b00000100,0b00001000};
 int TABLE[] = {0XFF,0XFF,0XFF,0XF9, // 1
                0XFF,0XFF,0XFF,0XA4, // 2
                0XFF,0XFF,0XFF,0XB0, // 3
@@ -61,21 +61,15 @@ int TABLE[] = {0XFF,0XFF,0XFF,0XF9, // 1
                0XB0,0XB0,0XB0,0XB0,
                0XC0,0XC0,0XC0,0XC0};
 int NUMBER_TO_SHOW[] = {0XC0, 0XF9, 0XA4, 0XB0, 0X99, 0X92, 
-                        0X82, 0XF8, 0X80, 0X90};               
-// I2C
-#define SCL PORTCbits.RC3
-#define SDA PORTCbits.RC4
-#define SCL_IO TRISCbits.TRISC3
-#define SDA_IO TRISCbits.TRISC4
+                        0X82, 0XF8, 0X80, 0X90};      
+
 #define INPUT   1
 #define OUTPUT  0
+#define I2C_SCL PORTCbits.RC3
+#define I2C_SDA PORTCbits.RC4
+#define I2C_SCL_IO TRISCbits.TRISC3
+#define I2C_SDA_IO TRISCbits.TRISC4
 
-#define I2C_SCL PORTCbits.RC6
-#define I2C_SDA PORTCbits.RC7
-#define I2C_SCL_IO TRISCbits.TRISC6
-#define I2C_SDA_IO TRISCbits.TRISC7
-//
-int a = 0b0100010111000111;
 // 函数声明区
 void SETORIGIN(void);
 void INICIALISE(void);
@@ -117,6 +111,10 @@ int EEPROM_ADDR = 0x15;
 
 // ===== I2C ===========================
 void delay_(int delay_time);
+void led_show(int seg_index[]);
+int _switch_scan_step(void);
+void _switch_scan_count_unshake(void);
+void _count_show(int max_number_show);
 void _i2c_start(void);
 void _i2c_stop(void);
 void _i2c_writeack(void);
@@ -141,7 +139,10 @@ void init_ADC(void);
 void init_touch(void);
 void init_temperature(void);
 void restart_ADC(void);
+void restart_touch(void);
+void data_output(void);
 // =====================================
+
 
 int main() {
     INICIALISE();
@@ -155,7 +156,7 @@ int main() {
     PIR1bits.TMR1IF=0;
     PIE1bits.TMR1IE=1;
 
-    // test EEPROM
+    // // test EEPROM
     // char temp_char = 'k';
     // char temp_int = 9;
     
@@ -164,10 +165,9 @@ int main() {
     // if (EEPROM_buf >= 1 && EEPROM_buf <= 10)
     //     COFFSET = 4*EEPROM_buf;
 
-    // test I2C
-    float temperature = 0;
-    temperature = read_temprature();
-    NUMBER_SHOW = (int)temperature;
+    // test temperature
+    float temperature;
+    temperature = _get_lm75b();
     
     while(1) {
         KEY_VALUE_LAST = KEY_VALUE;
@@ -213,9 +213,9 @@ void interrupt irs_routine(void) {
     NUM = CNUM;
     OFFSET = PA;
 
-//    SELECT();
+    SELECT();
     // WRITE();
-//    SHOW_WITH_NUMBER(NUMBER_SHOW);
+    SHOW_WITH_NUMBER(NUMBER_SHOW);
 
     PA--;
     CNUM++;
@@ -392,63 +392,63 @@ void KEY_4(void) {
 void KEY1(void) {
     KEY_VALUE = 1;
     ISPRESS   = 1;
-    WriteEE(EEPROM_ADDR,1);
+    // WriteEE(EEPROM_ADDR,1);
 }
 
 void KEY2(void) {
     KEY_VALUE = 2;
     ISPRESS   = 1;
-    WriteEE(EEPROM_ADDR,2);
+    // WriteEE(EEPROM_ADDR,2);
     
 }
 
 void KEY3(void) {
     KEY_VALUE = 3;
     ISPRESS   = 1;
-    WriteEE(EEPROM_ADDR,3);
+    // WriteEE(EEPROM_ADDR,3);
     
 }
 
 void KEY4(void) {
     KEY_VALUE = 4;
     ISPRESS   = 1;
-    WriteEE(EEPROM_ADDR,4);
+    // WriteEE(EEPROM_ADDR,4);
 }
 
 void KEY5(void) {
     KEY_VALUE = 5;
     ISPRESS   = 1;
-    WriteEE(EEPROM_ADDR,5);
+    // WriteEE(EEPROM_ADDR,5);
 }
 
 void KEY6(void) {
     KEY_VALUE = 6;
     ISPRESS   = 1;
-    WriteEE(EEPROM_ADDR,6);
+    // WriteEE(EEPROM_ADDR,6);
 }
 
 void KEY7(void) {
     KEY_VALUE = 7;
     ISPRESS   = 1;
-    WriteEE(EEPROM_ADDR,7);
+    // WriteEE(EEPROM_ADDR,7);
 }
 
 void KEY8(void) {
     KEY_VALUE = 8;
     ISPRESS   = 1;
-    WriteEE(EEPROM_ADDR,8);
+    // WriteEE(EEPROM_ADDR,8);
 }
 
 void KEY9(void) {
     KEY_VALUE = 9;
     ISPRESS   = 1;
-    WriteEE(EEPROM_ADDR,9);
+    // WriteEE(EEPROM_ADDR,9);
 }
 
 void KEY10(void) {
     KEY_VALUE = 10;
     ISPRESS   = 1;
-    WriteEE(EEPROM_ADDR,10);
+    // WriteEE(EEPROM_ADDR,10);
 }
 
 void DELAY(void) {
@@ -715,22 +715,68 @@ unsigned char _i2c_readbyte(void){
     return read_data;
 }
 
-float read_temprature(){
-    unsigned char dataH,dataL;
-    float result = 0.0;
-    init_I2C();
-    start_I2C();
-    send_byte(0b10010001);
-    if(receive_ACK() == 1){
-        dataH = read_byte();
-        send_ACK();
-        dataL = read_byte();
-        send_NACK();
-        result = ((dataH & 0x7f) * 8.0 + (float)dataL / 32.0) / 8.0;
+void _i2c_readmutibyte(unsigned char other_addr, unsigned char store_addr, unsigned char* addrpoint, unsigned char bytenum){
+    unsigned char status_ack;
+    _i2c_start();
+    status_ack = _i2c_writebyte(other_addr);
+    if(!status_ack) status_ack = _i2c_writebyte(store_addr);
+    if(!status_ack) {
+        _i2c_start();
+        status_ack = _i2c_writebyte(other_addr + 0x01);
     }
-    stop_I2C();
-    return result;
+    if(!status_ack)
+    for(unsigned char i = 0;i< bytenum; i++){
+        if(!status_ack){
+            addrpoint[i] = _i2c_readbyte();
+            if(i < (bytenum - 1)) _i2c_writeack();
+            else _i2c_writenoack();
+        }
+    }
+    _i2c_stop();
+    delay_(2);
+    return ;
 }
+
+//get number of temp
+float _get_lm75b(){
+    float temp_result;
+    unsigned char temp_regist[2];
+    _i2c_readmutibyte(0x91, 0x00, temp_regist, 2);
+    int temp = 0;
+    temp = temp_regist[0];
+    temp <<= 8;
+    temp += temp_regist[1];
+    temp >>= 5;
+    temp_result = temp * 0.125;
+    return temp_result;
+}
+
+//void temp_show(float temp_f){
+//    int temp = temp_f*100;
+//    for(unsigned char i = 0;i<4;i++){
+//        seg_index[3-i] = temp % 10;
+//        temp = temp / 10;
+//    }
+//}
+
+//float read_temprature(){
+//    unsigned char dataH,dataL;
+//    float result = 0.0;
+//    init_I2C();
+//    start_I2C();
+//    send_byte(0b10010001);
+//    if(receive_ACK() == 1){
+//        dataH = read_byte();
+//        send_ACK();
+//        dataL = read_byte();
+//        send_NACK();
+//        result = ((dataH & 0x7f) * 8.0 + (float)dataL / 32.0) / 8.0;
+//    }
+//    stop_I2C();
+//    return result;
+//}
+
+
 
 
 void delay(){
@@ -740,138 +786,162 @@ void delay(){
         NOP();
     }
 }
-void init_I2C(void){
-    SDA_IO = OUTPUT;
-    delay();
-    SCL_IO = OUTPUT;
-    delay();
-    SDA = 1;
-    delay();
-    SCL = 1;
-    delay();
-}
+//void init_I2C(void){
+//    SDA_IO = OUTPUT;
+//    delay();
+//    SCL_IO = OUTPUT;
+//    delay();
+//    SDA = 1;
+//    delay();
+//    SCL = 1;
+//    delay();
+//}
 
-void start_I2C(void){
-    SDA = 1;
-    delay();
-    SCL = 1;
-    delay();
-    SDA = 0;
-    delay();
-    SCL = 0;
-    delay();
-}
+// void start_I2C(void){
+//     SDA = 1;
+//     delay();
+//     SCL = 1;
+//     delay();
+//     SDA = 0;
+//     delay();
+//     SCL = 0;
+//     delay();
+// }
 
-void stop_I2C(void){
-    SCL = 0;
-    delay();
-    SDA_IO = OUTPUT;
-    delay();
-    SDA = 0;
-    delay();
-    SCL = 1;
-    delay();
-    SDA = 1;
-    delay();
-}
+// void stop_I2C(void){
+//     SCL = 0;
+//     delay();
+//     SDA_IO = OUTPUT;
+//     delay();
+//     SDA = 0;
+//     delay();
+//     SCL = 1;
+//     delay();
+//     SDA = 1;
+//     delay();
+// }
 
-void send_byte(unsigned char data){
-    SDA_IO = OUTPUT;
-    unsigned char i;
-    for (i = 0; i < 8; i++){
-        delay();
-        SCL = 0;
-        delay();
-        SDA = data>>(7-i) & 0x01;
-        delay();
-        SCL = 1;
-    }
-    SCL = 0;
-    delay();
-    SDA = 1;
-    delay();
-}
+// void send_byte(unsigned char data){
+//     SDA_IO = OUTPUT;
+//     unsigned char i;
+//     for (i = 0; i < 8; i++){
+//         delay();
+//         SCL = 0;
+//         delay();
+//         SDA = data>>(7-i) & 0x01;
+//         delay();
+//         SCL = 1;
+//     }
+//     SCL = 0;
+//     delay();
+//     SDA = 1;
+//     delay();
+// }
 
-unsigned char read_byte(void){
-    SDA_IO = INPUT;
-    delay();
-    SCL = 0;
-    delay();
-    unsigned char i,data=0;
-    for(i=0;i<8;i++){
-        delay();
-        SCL = 1;
-        delay();
-        if(i >= 1)
-            data <<= 1;
-        if(SDA == 1){
-            data += 1;
-        }
-        delay();
-        SCL = 0;
-        delay();
-    }
-    return data;
-}
+// unsigned char read_byte(void){
+//     SDA_IO = INPUT;
+//     delay();
+//     SCL = 0;
+//     delay();
+//     unsigned char i,data=0;
+//     for(i=0;i<8;i++){
+//         delay();
+//         SCL = 1;
+//         delay();
+//         if(i >= 1)
+//             data <<= 1;
+//         if(SDA == 1){
+//             data += 1;
+//         }
+//         delay();
+//         SCL = 0;
+//         delay();
+//     }
+//     return data;
+// }
 
-void send_ACK(void){
-    SDA_IO = OUTPUT;
-    delay();
-    SDA = 0;
-    delay();
-    SCL = 1;
-    delay();
-    SCL = 0;
-    delay();
-}
+// void send_ACK(void){
+//     SDA_IO = OUTPUT;
+//     delay();
+//     SDA = 0;
+//     delay();
+//     SCL = 1;
+//     delay();
+//     SCL = 0;
+//     delay();
+// }
 
-void send_NACK(void){
-    SDA_IO = OUTPUT;
-    delay();
-    SDA = 1;
-    delay();
-    SCL = 1;
-    delay();
-    SCL = 0;
-    delay();
-}
+// void send_NACK(void){
+//     SDA_IO = OUTPUT;
+//     delay();
+//     SDA = 1;
+//     delay();
+//     SCL = 1;
+//     delay();
+//     SCL = 0;
+//     delay();
+// }
 
-unsigned char receive_ACK(void){
-    unsigned char result = 0; 
-    SDA_IO = INPUT;
-    delay();
-    SCL = 1;
-    delay();
-    unsigned char i = 0;
-    while(i < 5){
-        i++;
-        if(!SDA){
-            result = 1;
-            break;
-        }
-    }
-    SCL = 0;
-    delay();
-    SDA_IO = OUTPUT;
-    delay();
-    return result;
-}
+// unsigned char receive_ACK(void){
+//     unsigned char result = 0; 
+//     SDA_IO = INPUT;
+//     delay();
+//     SCL = 1;
+//     delay();
+//     unsigned char i = 0;
+//     while(i < 5){
+//         i++;
+//         if(!SDA){
+//             result = 1;
+//             break;
+//         }
+//     }
+//     SCL = 0;
+//     delay();
+//     SDA_IO = OUTPUT;
+//     delay();
+//     return result;
+// }
 
-void init_ADC(void)
-{
-    FVRCON = 0b11000010; //???????????2.048v??????
-    ADCON0 = 0b11111111; //??FVR????????????ADC
-    ADCON1 = 0b01110000; //????????????????????????
-    ADCON2 = 0b11111111; //???????
-}
+//unsigned char RECOVER_DATA(unsigned char  addr_2){
+//    EEADRL = addr_2;
+//    CFGS = 0;
+//    EEPGD = 0;
+//    RD = 1;
+//    unsigned char result= EEDATL;
+//    return result;
+//}
+//void SAVE_DATA(unsigned char addr_2, unsigned char data){
+//    PORTA = 0b11111111; //close the tub
+//    EEADRL = addr_2;
+//    EEDATL = data;
+//    CFGS = 0;
+//    EEPGD = 0;
+//    WREN = 1;
+//    EECON2 = 0x55;
+//    EECON2 = 0xAA;
+//    WR = 1;
+//    GIE = 1;
+//    WREN = 0;
+//    while(WR);
+//    return;
+//}
 
-void init_temperature(void)
-{
-    FVRCON = 0b11000011; //???????????FVR4.096v??????
-    ADCON0 = 0b11110111; //??FVR????????????ADC
-    ADCON1 = 0b01110011; //正参考电压设为FVR
-    ADCON2 = 0b11111111; //???????
-}
+// void init_ADC(void)
+// {
+//     FVRCON = 0b11000010; //???????????2.048v??????
+//     ADCON0 = 0b11111111; //??FVR????????????ADC
+//     ADCON1 = 0b01110000; //????????????????????????
+//     ADCON2 = 0b11111111; //???????
+// }
+
+// void init_temperature(void)
+// {
+//     FVRCON = 0b11000011; //???????????FVR4.096v??????
+//     ADCON0 = 0b11110111; //??FVR????????????ADC
+//     ADCON1 = 0b01110011; //正参考电压设为FVR
+//     ADCON2 = 0b11111111; //???????
+// }
 
 //void restart_ADC(void)
 //{
