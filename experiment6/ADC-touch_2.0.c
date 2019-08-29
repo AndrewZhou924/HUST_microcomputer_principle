@@ -45,6 +45,9 @@ int KEY_FLAG = 0x00;
 int KEY_STATE = 0x00;
 int STOP_WATCH = 0x00;
 int NUMBER_SHOW = 6789;
+int ADC_VALUE = 0X00;
+long ADC_H = 0x00;
+long ADC_L = 0x00;
 int STABLE[] = {0b00000001,0b00000010,0b00000100,0b00001000};
 int TABLE[] = {0XFF,0XFF,0XFF,0XF9, // 1
                0XFF,0XFF,0XFF,0XA4, // 2
@@ -90,6 +93,7 @@ void send_NACK(void);
 void send_ACK(void);
 void init_I2C(void);
 void start_I2C(void);
+void ADCSCAN(void);
 // =====================================
 
 int main() {
@@ -108,12 +112,19 @@ int main() {
     float temperature = 0;
     
     while(1) {
-        temperature = read_temprature();
-        if (temperature > 0 && temperature < 100) {
-            NUMBER_SHOW = (int) 100 * temperature;
-        }
-        
+//        temperature = read_temprature();
+        ADCSCAN();
+        NUMBER_SHOW = (int)ADC_VALUE;
 
+        if(NUMBER_SHOW > 1000) {
+            PORTBbits.RB0=0; // 熄灭
+        } else {
+            PORTBbits.RB0=1; // 点亮
+        }
+            
+        for (int i = 0; i < 20; i ++)
+            DELAY();
+        
     };
 }
 
@@ -171,13 +182,16 @@ void INICIALISE(void) {
     TRISA = 0;
     LATA  = 0;
     ANSELA = 0b00000000;
-    TRISB = 0b00000000;
+    TRISB = 0b11111110;
     LATB = 0;
     ANSELB = 0b00000000;
     WPUB = 0b11111111;
     TRISC = 0;
     LATC = 0;
-
+    
+    ADCON0 = 0B10110101;
+    ADCON1 = 0B01000000;
+    
     KEY_VALUE_LAST = 0;
     KEY_VALUE = 0;
     ISPRESS = 0;
@@ -207,8 +221,8 @@ void SETPA(void) {
 } 
 
 void DELAY(void) {
-        for (int i=0; i<1; i++) {
-            for (int j=0; j<5; j++) {
+        for (int i=0; i<10; i++) {
+            for (int j=0; j<50; j++) {
 //            pass;
         }
     }
@@ -226,16 +240,16 @@ void SHOW_WITH_NUMBER(int number) {
     int index;
     
     switch (NUM) {
-    case 4: 
+    case 1: 
         index = (int)(number/1000) % 10;
         break;
-    case 3:
+    case 2:
         index = (int)(number/100) % 10;
         break;
-    case 2:
+    case 3:
         index = (int)(number/10) % 10;
         break;        
-    case 1: // 最低位，个位
+    case 4: // 最低位，个位
         index = number % 10;
         break;
     default:
@@ -249,149 +263,29 @@ void SHOW_WITH_NUMBER(int number) {
 
 void SELECT(void) {
     LATA  = 0b11111111;
-    PORTB = 0b11111111;   
+    PORTC = 0b11111111;   
     
-    PORTB = STABLE[NUM-1];
+    PORTC = STABLE[NUM-1];
 }
 
-float read_temprature(){
-    unsigned char dataH,dataL;
-    float result = 0.0;
-    init_I2C();
-    start_I2C();
-    send_byte(0b10010001);
-    if(receive_ACK() == 1){
-        dataH = read_byte();
-        send_ACK();
-        dataL = read_byte();
-        send_NACK();
-        result = ((dataH & 0x7f) * 8.0 + (float)dataL / 32.0) / 8.0;
-    }
-    stop_I2C();
-    return result;
+void ADCSCAN(void) {
+    ADCON0 = 0B10100101;
+    ADCON1 = 0B01000000;
+    ADRESH = 0b00000000;
+    ADRESL = 0b00000000;
+    //ADCON2 = 0B00001111;
+    ADCON0bits.GO_nDONE=1;//启动ADC
+    do {}
+    while( ADCON0bits.GO_nDONE);
+    
+    ADC_H = ADRESH;
+    ADC_L = ADRESL;
+    
+    ADC_H = ADC_H<<2;
+    ADC_L = ADC_L>>6;
+    ADC_VALUE = ADC_L|ADC_H;
 }
 
 
-void delay(){
-    int i = 2;
-    while(--i)
-    {
-        NOP();
-    }
-}
-void init_I2C(void){
-    SDA_IO = OUTPUT;
-    delay();
-    SCL_IO = OUTPUT;
-    delay();
-    SDA = 1;
-    delay();
-    SCL = 1;
-    delay();
-}
 
-void start_I2C(void){
-    SDA = 1;
-    delay();
-    SCL = 1;
-    delay();
-    SDA = 0;
-    delay();
-    SCL = 0;
-    delay();
-}
 
-void stop_I2C(void){
-    SCL = 0;
-    delay();
-    SDA_IO = OUTPUT;
-    delay();
-    SDA = 0;
-    delay();
-    SCL = 1;
-    delay();
-    SDA = 1;
-    delay();
-}
-
-void send_byte(unsigned char data){
-    SDA_IO = OUTPUT;
-    unsigned char i;
-    for (i = 0; i < 8; i++){
-        delay();
-        SCL = 0;
-        delay();
-        SDA = data>>(7-i) & 0x01;
-        delay();
-        SCL = 1;
-    }
-    SCL = 0;
-    delay();
-    SDA = 1;
-    delay();
-}
-
-unsigned char read_byte(void){
-    SDA_IO = INPUT;
-    delay();
-    SCL = 0;
-    delay();
-    unsigned char i,data=0;
-    for(i=0;i<8;i++){
-        delay();
-        SCL = 1;
-        delay();
-        if(i >= 1)
-            data <<= 1;
-        if(SDA == 1){
-            data += 1;
-        }
-        delay();
-        SCL = 0;
-        delay();
-    }
-    return data;
-}
-
-void send_ACK(void){
-    SDA_IO = OUTPUT;
-    delay();
-    SDA = 0;
-    delay();
-    SCL = 1;
-    delay();
-    SCL = 0;
-    delay();
-}
-
-void send_NACK(void){
-    SDA_IO = OUTPUT;
-    delay();
-    SDA = 1;
-    delay();
-    SCL = 1;
-    delay();
-    SCL = 0;
-    delay();
-}
-
-unsigned char receive_ACK(void){
-    unsigned char result = 0; 
-    SDA_IO = INPUT;
-    delay();
-    SCL = 1;
-    delay();
-    unsigned char i = 0;
-    while(i < 5){
-        i++;
-        if(!SDA){
-            result = 1;
-            break;
-        }
-    }
-    SCL = 0;
-    delay();
-    SDA_IO = OUTPUT;
-    delay();
-    return result;
-}
