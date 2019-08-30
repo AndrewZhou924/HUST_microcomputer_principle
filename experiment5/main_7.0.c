@@ -103,7 +103,6 @@ int main() {
     T1CONbits.TMR1ON=1;
     PIR1bits.TMR1IF=0;
     PIE1bits.TMR1IE=1;
-//    PIE1bits.TMR1GIE = 1;
 
     
     while(1) {
