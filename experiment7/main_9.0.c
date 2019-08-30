@@ -106,11 +106,12 @@ int main() {
 
     while(1) {    
         // send message
-
-        PIE1bits.TXIE=1;
+        PIE1bits.RCIE = 1;
+        
+//        PIE1bits.TXIE=1;
         DATA_TO_SEND = 3;
         data_send(DATA_TO_SEND);
-        PIE1bits.TXIE=0;
+//        PIE1bits.TXIE=0;
 
         // scan keyboard
         KEY_VALUE_LAST = KEY_VALUE;
@@ -128,7 +129,7 @@ int main() {
 void interrupt irs_routine(void) {
     // init_eusart();
 //    RCSTAbits.CREN = 0;
-//    RCSTAbits.CREN = 1;
+    RCSTAbits.CREN = 1;
 
     if (INTCONbits.TMR0IF == 1) {
         TMR0_INT_ISR:
@@ -159,7 +160,10 @@ void interrupt irs_routine(void) {
 //          TODO 控制灯亮与灭
 //          LATA4 = ~LATA4;
          RC_DATA = RCREG;
-         NUMBER_SHOW = (int)RC_DATA;
+         if (RC_DATA != 0 && RC_DATA)
+            NUMBER_SHOW = (int)RC_DATA;
+         
+//         PIE1bits.RCIE = 0;
      }
 
     if (PIR1bits.TXIF && PIE1bits.TXIE) {
@@ -223,12 +227,12 @@ void init_eusart(void){
     TXSTAbits.BRGH = 1;//高波特率
     BAUDCONbits.BRG16 = 1;//16位波特率
     
-    PIE1bits.RCIE = 0;//允许接收中断
+    PIE1bits.RCIE = 1;//允许接收中断
     INTCONbits.PEIE = 1;
     INTCONbits.GIE = 1;//允许全局中断
     
-    SPBRGH = 0x00;
-    SPBRGL = 0x23;  //波特率115200
+    SPBRGH = 0x03;
+    SPBRGL = 0x41;  //波特率4800
 
     RCSTAbits.CREN = 1;//使能接收
     TXSTAbits.TXEN = 1;//使能发送
@@ -246,7 +250,7 @@ void init_eusart(void){
     ANSELA = 0;
     TRISA = 0x0;
 
-    TRISC = 0x10;  //RC6输出，RC7输入
+    TRISC = 0x80;  //RC6输出，RC7输入
 }
 
 
@@ -257,8 +261,9 @@ void delay_(int delay_time){
 }
 
 void data_send(unsigned char data) {
-    TXREG = data;
     while(TRMT == 0) ;
+    TXREG = 123;
+    
 }
 
 // //return which switch closed

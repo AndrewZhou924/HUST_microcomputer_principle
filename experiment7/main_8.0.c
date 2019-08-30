@@ -223,12 +223,12 @@ void init_eusart(void){
     TXSTAbits.BRGH = 1;//高波特率
     BAUDCONbits.BRG16 = 1;//16位波特率
     
-    PIE1bits.RCIE = 0;//允许接收中断
+    PIE1bits.RCIE = 1;//允许接收中断
     INTCONbits.PEIE = 1;
     INTCONbits.GIE = 1;//允许全局中断
     
-    SPBRGH = 0x00;
-    SPBRGL = 0x23;  //波特率115200
+    SPBRGH = 0x03;
+    SPBRGL = 0x41;  //波特率4800
 
     RCSTAbits.CREN = 1;//使能接收
     TXSTAbits.TXEN = 1;//使能发送
